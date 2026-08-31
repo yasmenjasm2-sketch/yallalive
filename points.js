@@ -1,5 +1,3 @@
-// points.js
-
 // إعدادات Firebase الخاصة بمشروعك
 const firebaseConfig = {
     apiKey: "AIzaSyAo4IaLd5SfVYHAAp_noJD7ZXBbhdVx9-0",
@@ -8,143 +6,149 @@ const firebaseConfig = {
     projectId: "fawakihyallalive",
     storageBucket: "fawakihyallalive.firebasestorage.app",
     messagingSenderId: "917478913649",
-    appId: "1:917478913649:web:YOUR_WEB_APP_ID" // يتطلب إضافة تطبيق ويب من لوحة تحكم فايربيس
+    appId: "1:917478913649:web:dummy123456" // تم وضع معرف افتراضي لنسخة الويب
 };
 
 // تهيئة Firebase
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
 const auth = firebase.auth();
 const db = firebase.database();
 
-// دالة لتوليد رقم بطاقة عشوائي من 16 رقم
-function generateCardNumber() {
-    let cardNum = '';
-    for (let i = 0; i < 16; i++) {
-        cardNum += Math.floor(Math.random() * 10).toString();
-    }
-    return cardNum;
-}
-
-// تسجيل الدخول باستخدام جوجل
+// دالة تسجيل الدخول باستخدام Google
 function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider).catch((error) => {
-        alert("حدث خطأ أثناء تسجيل الدخول: " + error.message);
+        console.error("خطأ في تسجيل الدخول:", error);
     });
 }
 
-// تسجيل الخروج
+// دالة تسجيل الخروج
 function logout() {
     auth.signOut();
 }
 
-// مراقبة حالة المستخدم (تسجيل الدخول / الخروج)
+// توليد رقم بطاقة مكون من 16 رقم
+function generateCardNumber() {
+    let card = '';
+    for (let i = 0; i < 16; i++) {
+        card += Math.floor(Math.random() * 10).toString();
+    }
+    return card;
+}
+
+// إنشاء أو جلب محفظة المستخدم
+function handleUserWallet(user) {
+    const userRef = db.ref('users/' + user.uid);
+    userRef.once('value', (snapshot) => {
+        if (!snapshot.exists()) {
+            // مستخدم جديد: إنشاء بطاقة ورصيد 0
+            const newCardNumber = generateCardNumber();
+            const userData = {
+                name: user.displayName,
+                photo: user.photoURL,
+                cardNumber: newCardNumber,
+                balance: 0 // 1 نقطة = 1 دولار
+            };
+            
+            // حفظ بيانات المستخدم
+            userRef.set(userData);
+            
+            // حفظ البطاقة في مسار منفصل لتسهيل بحث الأدمن
+            db.ref('cards/' + newCardNumber).set({
+                uid: user.uid
+            });
+            
+            updateUserUI(userData);
+        } else {
+            // مستخدم مسجل مسبقاً
+            updateUserUI(snapshot.val());
+        }
+    });
+}
+
+// مراقبة حالة تسجيل الدخول
 auth.onAuthStateChanged((user) => {
-    const loginSection = document.getElementById('login-section');
-    const appSection = document.getElementById('app-section');
-    
-    if (user && loginSection && appSection) {
-        loginSection.style.display = 'none';
-        appSection.style.display = 'block';
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userSection = document.getElementById('user-section');
+
+    if (user) {
+        if(loginBtn) loginBtn.style.display = 'none';
+        if(logoutBtn) logoutBtn.style.display = 'block';
+        if(userSection) userSection.style.display = 'block';
         
-        const userRef = db.ref('users/' + user.uid);
-        userRef.once('value').then((snapshot) => {
-            if (!snapshot.exists()) {
-                // مستخدم جديد: إنشاء حساب وبطاقة جديدة
-                const newCardNumber = generateCardNumber();
-                const userData = {
-                    name: user.displayName,
-                    email: user.email,
-                    photo: user.photoURL,
-                    cardNumber: newCardNumber,
-                    balance: 0 // 1 نقطة = 1 دولار
-                };
-                
-                userRef.set(userData);
-                // حفظ مرجع البطاقة للبحث عنها في لوحة الأدمن
-                db.ref('cards/' + newCardNumber).set(user.uid);
-                updateUI(userData);
-            } else {
-                // مستخدم موجود مسبقاً
-                updateUI(snapshot.val());
-                // الاستماع لتحديثات الرصيد المباشرة
-                userRef.on('value', (snap) => {
-                    updateUI(snap.val());
-                });
-            }
-        });
-    } else if (loginSection && appSection) {
-        loginSection.style.display = 'block';
-        appSection.style.display = 'none';
+        handleUserWallet(user);
+    } else {
+        if(loginBtn) loginBtn.style.display = 'block';
+        if(logoutBtn) logoutBtn.style.display = 'none';
+        if(userSection) userSection.style.display = 'none';
     }
 });
 
-// تحديث واجهة المستخدم بالبيانات
-function updateUI(userData) {
-    if(document.getElementById('user-name')) {
-        document.getElementById('user-name').innerText = userData.name;
-        document.getElementById('user-photo').src = userData.photo;
-        // تنسيق رقم البطاقة ليظهر 4 أرقام بكل مجموعة
-        const formattedCard = userData.cardNumber.match(/.{1,4}/g).join(' ');
-        document.getElementById('card-number').innerText = formattedCard;
-        document.getElementById('user-balance').innerText = userData.balance + " USD";
+// تحديث واجهة البطاقة للمستخدم
+function updateUserUI(data) {
+    const nameEl = document.getElementById('user-name');
+    const photoEl = document.getElementById('user-photo');
+    const cardEl = document.getElementById('card-number');
+    const balanceEl = document.getElementById('user-balance');
+
+    if (nameEl) nameEl.innerText = data.name;
+    if (photoEl) photoEl.src = data.photo;
+    
+    if (cardEl) {
+        // تنسيق الرقم (كل 4 أرقام مسافة)
+        cardEl.innerText = data.cardNumber.match(/.{1,4}/g).join(' ');
     }
+    
+    if (balanceEl) balanceEl.innerText = `الرصيد: ${data.balance} دولار (نقطة)`;
 }
 
-// دالة شراء الكوينزات (خصم الرصيد)
-function purchaseCoins(price, coins) {
-    const yallaId = document.getElementById('yalla-id').value;
-    if (!yallaId) {
-        alert("يرجى إدخال معرف يلا (ID) الخاص بك أولاً.");
-        return;
-    }
-
+// دالة شراء الكوينزات (للمستخدم)
+function purchaseCoins(priceUSD, coinsAmount) {
     const user = auth.currentUser;
-    if (user) {
-        const userRef = db.ref('users/' + user.uid);
-        userRef.once('value').then((snapshot) => {
-            const userData = snapshot.val();
-            if (userData.balance >= price) {
-                const newBalance = userData.balance - price;
-                userRef.update({ balance: newBalance }).then(() => {
-                    alert(`تم شحن ${coins} كوينز بنجاح إلى المعرف ${yallaId}! الرصيد المتبقي: ${newBalance} USD`);
-                    // هنا يمكنك إضافة كود إرسال طلب الشحن إلى سيرفر يلا لايف (API) الخاص بك
-                });
-            } else {
-                alert("رصيد البطاقة غير كافٍ. يرجى شحن بطاقتك!");
-            }
-        });
-    }
-}
-
-// وظائف لوحة تحكم الأدمن
-function adminChargeCard() {
-    const cardInput = document.getElementById('admin-card-number').value.replace(/\s+/g, '');
-    const amountInput = parseInt(document.getElementById('admin-amount').value);
-
-    if (cardInput.length !== 16 || isNaN(amountInput)) {
-        alert("تأكد من إدخال رقم بطاقة صحيح (16 رقم) وقيمة الشحن.");
+    if (!user) {
+        alert("يرجى تسجيل الدخول أولاً.");
         return;
     }
 
-    // البحث عن المعرف (UID) المرتبط بالبطاقة
-    db.ref('cards/' + cardInput).once('value').then((snapshot) => {
-        if (snapshot.exists()) {
-            const uid = snapshot.val();
+    const userRef = db.ref('users/' + user.uid);
+    userRef.once('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data.balance >= priceUSD) {
+            // خصم الرصيد
+            const newBalance = data.balance - priceUSD;
+            userRef.update({ balance: newBalance }).then(() => {
+                alert(`تم شحن ${coinsAmount} كوينز بنجاح! تم خصم ${priceUSD} نقاط.`);
+                handleUserWallet(user); // تحديث الواجهة
+            });
+        } else {
+            alert("رصيد النقاط (الدولار) غير كافٍ. يرجى شحن بطاقتك.");
+        }
+    });
+}
+
+// دالة شحن حساب مستخدم (للأدمن)
+function adminChargeWallet(cardNumber, amountUSD) {
+    const cardsRef = db.ref('cards/' + cardNumber);
+    
+    cardsRef.once('value', (cardSnapshot) => {
+        if (cardSnapshot.exists()) {
+            const uid = cardSnapshot.val().uid;
             const userRef = db.ref('users/' + uid);
             
-            userRef.once('value').then((userSnap) => {
-                const currentBalance = userSnap.val().balance || 0;
-                const newBalance = currentBalance + amountInput;
+            userRef.once('value', (userSnapshot) => {
+                const currentBalance = userSnapshot.val().balance || 0;
+                const newBalance = currentBalance + parseInt(amountUSD);
                 
                 userRef.update({ balance: newBalance }).then(() => {
-                    alert("تم شحن البطاقة بنجاح! الرصيد الجديد: " + newBalance + " USD");
-                    document.getElementById('admin-card-number').value = '';
-                    document.getElementById('admin-amount').value = '';
+                    document.getElementById('admin-msg').innerHTML = `<span style="color:green;">تم شحن بطاقة ${cardNumber} بمبلغ ${amountUSD} دولار بنجاح! الرصيد الجديد: ${newBalance}</span>`;
                 });
             });
         } else {
-            alert("رقم البطاقة غير موجود في النظام!");
+            document.getElementById('admin-msg').innerHTML = `<span style="color:red;">رقم البطاقة غير موجود! تأكد من صحة الـ 16 رقم.</span>`;
         }
     });
 }

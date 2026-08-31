@@ -80,7 +80,6 @@
         </div>
 
         <h3>اختر الباقة (تمت إضافة 1$ للأسعار):</h3>
-        <!-- هذه هي "ملفات الأدمن" التي تحدد سعر الشحن وعدد الكوينز -->
         <div class="grid-container">
             <div class="package-card" onclick="purchaseCoins(7, 520)">
                 <div class="price">USD 7</div>
@@ -123,113 +122,144 @@
     </div>
 </div>
 
-<!-- إعدادات Firebase (يجب استبدال القيم بمشروعك الخاص) -->
 <script>
-    // 🔴 ضع إعدادات Firebase الخاصة بك هنا (من لوحة تحكم Firebase)
-    var firebaseConfig = {
+    // 1. إعدادات Firebase (يجب وضع بياناتك هنا من إعدادات مشروعك في فايربيس)
+    const firebaseConfig = {
         apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_PROJECT.firebaseapp.com",
-        databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-        projectId: "YOUR_PROJECT",
-        storageBucket: "YOUR_PROJECT.appspot.com",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
         messagingSenderId: "YOUR_SENDER_ID",
         appId: "YOUR_APP_ID"
     };
-    firebase.initializeApp(firebaseConfig);
 
-    // إنشاء رقم بطاقة عشوائي 16 رقم
-    function generateCardNumber() {
-        let cardNumber = '4000'; // رمز البنك مبدئي
-        for (let i = 0; i < 12; i++) {
-            cardNumber += Math.floor(Math.random() * 10);
-        }
-        // تنسيق الرقم إلى مجموعات من 4 أرقام
-        return cardNumber.match(/.{1,4}/g).join(' ');
+    // تهيئة Firebase إذا لم يكن مهيئاً مسبقاً
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
     }
+    
+    const auth = firebase.auth();
+    const db = firebase.database();
+    let currentUser = null;
+    let currentBalance = 0;
 
-    // تسجيل الدخول عبر Google
-    function loginWithGoogle() {
-        var provider = new firebase.auth.GoogleAuthProvider();
-        firebase.auth().signInWithPopup(provider).catch(function(error) {
-            alert("خطأ في تسجيل الدخول: " + error.message);
-        });
-    }
-
-    // تسجيل الخروج
-    function logout() {
-        firebase.auth().signOut();
-    }
-
-    // مراقبة حالة تسجيل الدخول
-    firebase.auth().onAuthStateChanged(function(user) {
+    // 2. مراقبة حالة تسجيل الدخول
+    auth.onAuthStateChanged((user) => {
         if (user) {
+            currentUser = user;
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('app-section').style.display = 'block';
+            
+            document.getElementById('user-name').innerText = user.displayName;
             document.getElementById('user-photo').src = user.photoURL;
-            document.getElementById('user-name').textContent = user.displayName;
             
-            // التحقق من وجود بيانات المستخدم في قاعدة البيانات وإنشاء بطاقة إن لم توجد
-            var userRef = firebase.database().ref('users/' + user.uid);
-            
-            userRef.once('value').then(function(snapshot) {
-                if (snapshot.exists()) {
-                    // المستخدم موجود مسبقاً: تحميل الرقم والرصيد
-                    var data = snapshot.val();
-                    document.getElementById('card-number').textContent = data.cardNumber;
-                    document.getElementById('user-balance').textContent = data.balance + " USD";
-                } else {
-                    // مستخدم جديد: إنشاء بطاقة برصيد 0
-                    var newCard = generateCardNumber();
-                    userRef.set({
-                        cardNumber: newCard,
-                        balance: 0,
-                        coins: 0
-                    });
-                    document.getElementById('card-number').textContent = newCard;
-                    document.getElementById('user-balance').textContent = "0 USD";
-                }
-            });
-
+            checkAndCreateUserData(user);
         } else {
+            currentUser = null;
             document.getElementById('login-section').style.display = 'block';
             document.getElementById('app-section').style.display = 'none';
         }
     });
 
-    // عملية الشراء والشحن (تعديل الرصيد في قاعدة البيانات)
+    // 3. تسجيل الدخول بجوجل
+    function loginWithGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch((error) => {
+            console.error("خطأ في تسجيل الدخول:", error);
+            alert("فشل تسجيل الدخول. حاول مرة أخرى.");
+        });
+    }
+
+    // 4. تسجيل الخروج
+    function logout() {
+        auth.signOut();
+    }
+
+    // 5. إنشاء حساب المستخدم في قاعدة البيانات وإنشاء رقم بطاقة ورصيد إذا لم يكن موجوداً
+    function checkAndCreateUserData(user) {
+        const userRef = db.ref('users/' + user.uid);
+        
+        userRef.once('value').then((snapshot) => {
+            if (!snapshot.exists()) {
+                // إذا كان مستخدماً جديداً، أنشئ له بطاقة بـ 16 رقماً ورصيد 0
+                const newCardNumber = generateCardNumber();
+                userRef.set({
+                    name: user.displayName,
+                    email: user.email,
+                    cardNumber: newCardNumber,
+                    balance: 0 // هذا الرصيد الذي سيعدله الأدمن
+                });
+                
+                updateCardUI(newCardNumber, 0);
+            } else {
+                // إذا كان المستخدم موجوداً، جلب بياناته
+                const data = snapshot.val();
+                updateCardUI(data.cardNumber, data.balance);
+            }
+            
+            // مراقبة الرصيد بشكل لحظي (إذا قام الأدمن بشحنه، سيتغير فوراً)
+            userRef.child('balance').on('value', (balanceSnapshot) => {
+                const bal = balanceSnapshot.val() || 0;
+                currentBalance = bal;
+                document.getElementById('user-balance').innerText = bal + " USD";
+            });
+        });
+    }
+
+    // 6. توليد رقم بطاقة وهمي من 16 رقماً
+    function generateCardNumber() {
+        let card = "";
+        for(let i = 0; i < 4; i++){
+            card += Math.floor(1000 + Math.random() * 9000).toString() + (i < 3 ? " " : "");
+        }
+        return card;
+    }
+
+    // 7. تحديث واجهة البطاقة
+    function updateCardUI(cardNumber, balance) {
+        document.getElementById('card-number').innerText = cardNumber;
+        document.getElementById('user-balance').innerText = balance + " USD";
+        currentBalance = balance;
+    }
+
+    // 8. عملية الشراء وخصم الرصيد
     function purchaseCoins(price, coins) {
-        var user = firebase.auth().currentUser;
-        if (!user) {
-            alert("يجب تسجيل الدخول أولاً!");
+        const yallaId = document.getElementById('yalla-id').value;
+        
+        if (!yallaId) {
+            alert("يرجى إدخال معرف يلا (ID) أولاً!");
             return;
         }
 
-        var userRef = firebase.database().ref('users/' + user.uid);
-        
-        // محاكاة الدفع (قبول العملية)
-        var confirmPurchase = confirm("هل تريد شراء باقة " + price + " دولار مقابل " + coins + " كوينز؟");
-        if (!confirmPurchase) return;
-
-        // قراءة الرصيد الحالي وتحديثه
-        userRef.once('value').then(function(snapshot) {
-            var currentData = snapshot.val();
-            var oldBalance = currentData.balance;
-            var oldCoins = currentData.coins;
-
-            // الشحن: زيادة الرصيد المالي والعملات (الرصيد بالدولار يزيد حسب السعر)
-            var newBalance = oldBalance + price; 
-            var newCoins = oldCoins + coins;
-
-            // تحديث قاعدة البيانات
-            userRef.update({
-                balance: newBalance,
-                coins: newCoins
-            }).then(function() {
-                // تحديث الواجهة فوراً
-                document.getElementById('user-balance').textContent = newBalance + " USD";
-                alert("تمت عملية الشحن بنجاح! تم إضافة " + coins + " كوينز إلى محفظتك.");
+        if (currentBalance >= price) {
+            // خصم الرصيد
+            const newBalance = currentBalance - price;
+            
+            // تحديث الرصيد في قاعدة البيانات
+            db.ref('users/' + currentUser.uid).update({
+                balance: newBalance
+            }).then(() => {
+                // حفظ عملية الشراء للأدمن ليقوم بتنفيذها فعلياً في يلا لايف
+                const orderRef = db.ref('orders').push();
+                orderRef.set({
+                    userId: currentUser.uid,
+                    userName: currentUser.displayName,
+                    yallaId: yallaId,
+                    packagePrice: price,
+                    coinsAmount: coins,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    status: "pending" // بانتظار تنفيذ الأدمن
+                });
+                
+                alert(`تم الشراء بنجاح! سيتم إرسال ${coins} كوينز إلى المعرف ${yallaId}. الرصيد المتبقي: ${newBalance}$`);
+            }).catch((error) => {
+                alert("حدث خطأ أثناء الشراء: " + error.message);
             });
-        });
+            
+        } else {
+            alert("رصيدك غير كافٍ لإتمام هذه العملية! يرجى التواصل مع الإدارة لشحن بطاقتك.");
+        }
     }
 </script>
 </body>

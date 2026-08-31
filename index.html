@@ -3,39 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شحن كوينزات Yalla Live</title>
+    <title>شحن كوينزات Yalla Live VIP</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; text-align: center; }
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .btn { background: #4285F4; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        .btn:hover { background: #3367D6; }
+        :root { --primary: #4285F4; --secondary: #34A853; --dark: #202124; --light: #f8f9fa; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #eef2f3; margin: 0; padding: 15px; text-align: center; color: var(--dark); }
         
-        /* تصميم البطاقة البنكية */
-        .card-container { display: none; max-width: 400px; margin: 0 auto 30px auto; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; border-radius: 15px; padding: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); text-align: left; position: relative; }
-        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-        .card-header img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid white; }
-        .card-name { font-size: 18px; font-weight: bold; margin-left: 10px; text-transform: uppercase;}
-        .card-chip { width: 40px; height: 30px; background: gold; border-radius: 5px; margin-bottom: 15px; }
-        .card-number-display { font-size: 22px; letter-spacing: 2px; margin-bottom: 15px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
-        .card-balance { font-size: 16px; font-weight: bold; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
+        .btn:hover { background: #2b6bdc; box-shadow: 0 4px 10px rgba(66,133,244,0.3); }
         
-        /* قائمة الباقات */
-        .packages-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; max-width: 800px; margin: auto; }
-        .package { background: white; border: 2px solid #e0e0e0; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.3s; }
-        .package:hover { border-color: #4285F4; transform: translateY(-5px); }
-        .price { color: #2c6bed; font-size: 20px; font-weight: bold; margin-bottom: 5px; }
-        .coins { font-size: 18px; color: #555; }
-        .badge { background: #e3f2fd; color: #1976d2; padding: 5px 10px; border-radius: 15px; font-size: 12px; margin-top: 15px; font-weight: bold; }
+        .info-box { background: linear-gradient(135deg, #ffffff, #f1f3f4); padding: 20px; border-radius: 12px; border: 1px solid #e0e0e0; margin-bottom: 25px; line-height: 1.8; }
+        .info-box h3 { color: var(--primary); margin-top: 0; }
+        .info-box p { margin: 5px 0; font-size: 15px; font-weight: bold; color: #555; }
+
+        /* البطاقة البنكية */
+        .card-container { display: none; max-width: 400px; margin: 0 auto 30px auto; background: linear-gradient(135deg, #141e30 0%, #243b55 100%); color: white; border-radius: 18px; padding: 25px; box-shadow: 0 15px 25px rgba(0,0,0,0.4); text-align: left; position: relative; overflow: hidden; }
+        .card-container::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.1) 10%, transparent 20%); background-size: 20px 20px; opacity: 0.3; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; position: relative; z-index: 1; }
+        .card-header img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid gold; box-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        .card-name { font-size: 18px; font-weight: bold; margin-left: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .card-chip { width: 45px; height: 35px; background: linear-gradient(135deg, #ffd700, #daa520); border-radius: 6px; margin-bottom: 20px; position: relative; z-index: 1; }
+        
+        .card-number-wrapper { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 1; margin-bottom: 15px; }
+        .card-number-display { font-size: 24px; letter-spacing: 3px; font-family: monospace; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+        .copy-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; transition: 0.3s; }
+        .copy-btn:hover { background: rgba(255,255,255,0.4); }
+        
+        .card-balance { font-size: 18px; font-weight: bold; position: relative; z-index: 1; color: #00ff88; }
+        
+        /* الباقات */
+        .packages-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; max-width: 900px; margin: auto; }
+        .package { background: white; border: 2px solid transparent; border-radius: 15px; padding: 25px 15px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.4s; box-shadow: 0 5px 15px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
+        .package:hover { border-color: var(--primary); transform: translateY(-8px); box-shadow: 0 15px 30px rgba(66,133,244,0.2); }
+        
+        .price-wrapper { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+        .price { color: #2c3e50; font-size: 22px; font-weight: 900; }
+        
+        /* أنيميشن الصورة المطلوبة */
+        .coin-img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; animation: pulse 2s infinite ease-in-out; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15) rotate(5deg); } 100% { transform: scale(1); } }
+        
+        .coins { font-size: 20px; color: #f39c12; font-weight: bold; }
+        .badge { background: #e3f2fd; color: #1976d2; padding: 6px 12px; border-radius: 20px; font-size: 13px; margin-top: 15px; font-weight: bold; border: 1px dashed #1976d2; }
+
+        /* النوافذ المنبثقة (Modals) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-box { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: popIn 0.3s ease-out; }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .modal-box h3 { margin-top: 0; color: #333; }
+        .modal-input { width: 90%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 18px; text-align: center; margin: 15px 0; outline: none; transition: 0.3s; }
+        .modal-input:focus { border-color: var(--primary); }
+        
+        .btn-confirm { background: var(--secondary); color: white; border: none; padding: 12px 25px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; }
+        .btn-cancel { background: #e74c3c; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; }
+        
+        /* تصميم زر الواتساب في النافذة */
+        .wa-btn { background: #25D366; color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px; border-radius: 10px; font-size: 18px; font-weight: bold; margin-top: 15px; transition: 0.3s; }
+        .wa-btn:hover { background: #1ebe57; transform: scale(1.05); }
+        .wa-icon { font-size: 24px; }
+
+        /* شاشة الانتظار */
+        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 15px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>متجر الشحن</h2>
+        <h2>متجر الشحن الاحترافي</h2>
         <button id="login-btn" class="btn" onclick="loginWithGoogle()">تسجيل الدخول بـ Google</button>
         <button id="logout-btn" class="btn" style="display:none; background:#d32f2f;" onclick="logout()">تسجيل الخروج</button>
     </div>
 
+    <div class="info-box">
+        <h3>✨ لماذا تشحن عبر منصتنا؟</h3>
+        <p>✔️ الشحن يتم عبر <b>الأيدي (ID) الخاص بك</b> فقط.</p>
+        <p>✔️ لا حاجة لتسجيل الدخول بحسابك في اللعبة لدينا، أمان تام!</p>
+        <p>✔️ نوفر لك <b>أفضل الأسعار المنافسة</b> وسرعة في الإنجاز.</p>
+    </div>
+
+    <!-- البطاقة البنكية للمستخدم -->
     <div id="user-section" class="card-container" dir="ltr">
         <div class="card-header">
             <img id="user-photo" src="" alt="Profile">
@@ -43,46 +91,109 @@
             <span style="font-weight:bold; font-style:italic;">Yalla Card</span>
         </div>
         <div class="card-chip"></div>
-        <div id="card-number" class="card-number-display">**** **** **** ****</div>
+        <div class="card-number-wrapper">
+            <div id="card-number" class="card-number-display">**** **** **** ****</div>
+            <button class="copy-btn" onclick="copyCard()">نسخ</button>
+        </div>
         <div id="user-balance" class="card-balance">الرصيد: 0 دولار</div>
     </div>
 
-    <h3>باقات الشحن المتوفرة</h3>
+    <h3>🎁 باقات الشحن المتوفرة</h3>
     <div class="packages-grid">
-        <div class="package" onclick="purchaseCoins(7, '520')">
-            <div class="price">USD 7</div>
+        <!-- الباقة 1 -->
+        <div class="package" onclick="initiatePurchase(7, '520')">
+            <div class="price-wrapper">
+                <span class="price">USD 7</span>
+                <img src="hamzadd.jpg" class="coin-img" alt="Coin">
+            </div>
             <div class="coins">🪙 520</div>
-            <div class="badge">🎁 شحن عبر الـ ID</div>
+            <div class="badge">شحن فوري عبر الـ ID</div>
         </div>
-        <div class="package" onclick="purchaseCoins(13, '1,155')">
-            <div class="price">USD 13</div>
+        <!-- الباقة 2 -->
+        <div class="package" onclick="initiatePurchase(13, '1,155')">
+            <div class="price-wrapper">
+                <span class="price">USD 13</span>
+                <img src="hamzadd.jpg" class="coin-img" alt="Coin">
+            </div>
             <div class="coins">🪙 1,155</div>
-            <div class="badge">🎁 شحن عبر الـ ID</div>
+            <div class="badge">شحن فوري عبر الـ ID</div>
         </div>
-        <div class="package" onclick="purchaseCoins(41, '3,820')">
-            <div class="price">USD 41</div>
+        <!-- الباقة 3 -->
+        <div class="package" onclick="initiatePurchase(41, '3,820')">
+            <div class="price-wrapper">
+                <span class="price">USD 41</span>
+                <img src="hamzadd.jpg" class="coin-img" alt="Coin">
+            </div>
             <div class="coins">🪙 3,820</div>
-            <div class="badge">🎁 شحن عبر الـ ID</div>
+            <div class="badge">شحن فوري عبر الـ ID</div>
         </div>
-        <div class="package" onclick="purchaseCoins(61, '5,930')">
-            <div class="price">USD 61</div>
+        <!-- الباقة 4 -->
+        <div class="package" onclick="initiatePurchase(61, '5,930')">
+            <div class="price-wrapper">
+                <span class="price">USD 61</span>
+                <img src="hamzadd.jpg" class="coin-img" alt="Coin">
+            </div>
             <div class="coins">🪙 5,930</div>
-            <div class="badge">🎁 شحن عبر الـ ID</div>
+            <div class="badge">شحن فوري عبر الـ ID</div>
         </div>
-        <div class="package" onclick="purchaseCoins(121, '12,550')">
-            <div class="price">USD 121</div>
+        <!-- الباقة 5 -->
+        <div class="package" onclick="initiatePurchase(121, '12,550')">
+            <div class="price-wrapper">
+                <span class="price">USD 121</span>
+                <img src="hamzadd.jpg" class="coin-img" alt="Coin">
+            </div>
             <div class="coins">🪙 12,550</div>
-            <div class="badge">🎁 شحن عبر الـ ID</div>
+            <div class="badge">شحن فوري عبر الـ ID</div>
         </div>
-        <div class="package" onclick="purchaseCoins(200, '20,900')">
-            <div class="price">USD 200</div>
+        <!-- الباقة 6 -->
+        <div class="package" onclick="initiatePurchase(200, '20,900')">
+            <div class="price-wrapper">
+                <span class="price">USD 200</span>
+                <img src="hamzadd.jpg" class="coin-img" alt="Coin">
+            </div>
             <div class="coins">🪙 20,900</div>
-            <div class="badge">🎁 شحن عبر الـ ID</div>
+            <div class="badge">شحن فوري عبر الـ ID</div>
         </div>
-        <div class="package" onclick="purchaseCoins(360, '37,800')">
-            <div class="price">USD 360</div>
+        <!-- الباقة 7 -->
+        <div class="package" onclick="initiatePurchase(360, '37,800')">
+            <div class="price-wrapper">
+                <span class="price">USD 360</span>
+                <img src="hamzadd.jpg" class="coin-img" alt="Coin">
+            </div>
             <div class="coins">🪙 37,800</div>
-            <div class="badge">🎁 شحن عبر الـ ID</div>
+            <div class="badge">شحن فوري عبر الـ ID</div>
+        </div>
+    </div>
+
+    <!-- نافذة إدخال الأيدي (ID) -->
+    <div id="id-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>أدخل الأيدي (ID) الخاص بك</h3>
+            <p style="font-size:14px; color:#666;">يرجى التأكد من صحة رقم الـ ID في يلا لايف</p>
+            <input type="number" id="yalla-id-input" class="modal-input" placeholder="مثال: 1234567">
+            <button class="btn-confirm" onclick="confirmPurchase()">تأكيد وشحن الآن</button>
+            <button class="btn-cancel" onclick="closeModals()">إلغاء</button>
+        </div>
+    </div>
+
+    <!-- نافذة الرصيد غير كافٍ (التوجيه للواتساب) -->
+    <div id="wa-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color:#e74c3c;">عذراً، رصيدك غير كافٍ ⚠️</h3>
+            <p>نقاطك الحالية لا تكفي لشراء هذه الباقة. يرجى التوجه إلى واتساب لشحن بطاقتك فوراً بأفضل الأسعار.</p>
+            <a href="#" id="wa-link" target="_blank" class="wa-btn">
+                <span class="wa-icon">💬</span> تواصل معنا لشحن رصيدك
+            </a>
+            <button class="btn-cancel" style="margin-top:15px; background:#95a5a6;" onclick="closeModals()">إغلاق</button>
+        </div>
+    </div>
+
+    <!-- شاشة الانتظار -->
+    <div id="wait-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="loader"></div>
+            <h3 style="color:var(--primary);">جاري معالجة طلبك...</h3>
+            <p>يرجى الانتظار، يتم الآن إيصال الكوينزات إلى حسابك باحترافية 🚀</p>
         </div>
     </div>
 

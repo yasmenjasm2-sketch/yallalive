@@ -1,4 +1,4 @@
-// إعدادات Firebase الخاصة بمشروعك
+// إعدادات Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyAo4IaLd5SfVYHAAp_noJD7ZXBbhdVx9-0",
     authDomain: "fawakihyallalive.firebaseapp.com",
@@ -6,10 +6,9 @@ const firebaseConfig = {
     projectId: "fawakihyallalive",
     storageBucket: "fawakihyallalive.firebasestorage.app",
     messagingSenderId: "917478913649",
-    appId: "1:917478913649:web:dummy123456" // تم وضع معرف افتراضي لنسخة الويب
+    appId: "1:917478913649:web:dummy123456" 
 };
 
-// تهيئة Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
@@ -17,20 +16,19 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db = firebase.database();
 
-// دالة تسجيل الدخول باستخدام Google
+let currentUserData = null; // لتخزين بيانات المستخدم محلياً
+let pendingPurchase = null; // لتخزين الباقة المختارة مؤقتاً
+
 function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).catch((error) => {
-        console.error("خطأ في تسجيل الدخول:", error);
-    });
+    auth.signInWithPopup(provider).catch((error) => console.error("خطأ:", error));
 }
 
-// دالة تسجيل الخروج
 function logout() {
     auth.signOut();
+    currentUserData = null;
 }
 
-// توليد رقم بطاقة مكون من 16 رقم
 function generateCardNumber() {
     let card = '';
     for (let i = 0; i < 16; i++) {
@@ -39,37 +37,34 @@ function generateCardNumber() {
     return card;
 }
 
-// إنشاء أو جلب محفظة المستخدم
 function handleUserWallet(user) {
     const userRef = db.ref('users/' + user.uid);
-    userRef.once('value', (snapshot) => {
+    
+    userRef.on('value', (snapshot) => { // استخدمنا on ليتحدث الرصيد تلقائياً
         if (!snapshot.exists()) {
-            // مستخدم جديد: إنشاء بطاقة ورصيد 0
             const newCardNumber = generateCardNumber();
             const userData = {
-                name: user.displayName,
-                photo: user.photoURL,
+                name: user.displayName || "مستخدم جديد",
+                photo: user.photoURL || "https://cdn-icons-png.flaticon.com/512/149/149071.png",
                 cardNumber: newCardNumber,
-                balance: 0 // 1 نقطة = 1 دولار
+                balance: 0 
             };
             
-            // حفظ بيانات المستخدم
-            userRef.set(userData);
-            
-            // حفظ البطاقة في مسار منفصل لتسهيل بحث الأدمن
-            db.ref('cards/' + newCardNumber).set({
-                uid: user.uid
+            userRef.set(userData).then(() => {
+                db.ref('cards/' + newCardNumber).set({ uid: user.uid });
+                currentUserData = userData;
+                updateUserUI(userData);
             });
             
-            updateUserUI(userData);
         } else {
-            // مستخدم مسجل مسبقاً
-            updateUserUI(snapshot.val());
+            const data = snapshot.val();
+            if(!data.photo) data.photo = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+            currentUserData = data;
+            updateUserUI(data);
         }
     });
 }
 
-// مراقبة حالة تسجيل الدخول
 auth.onAuthStateChanged((user) => {
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
@@ -79,7 +74,6 @@ auth.onAuthStateChanged((user) => {
         if(loginBtn) loginBtn.style.display = 'none';
         if(logoutBtn) logoutBtn.style.display = 'block';
         if(userSection) userSection.style.display = 'block';
-        
         handleUserWallet(user);
     } else {
         if(loginBtn) loginBtn.style.display = 'block';
@@ -88,7 +82,6 @@ auth.onAuthStateChanged((user) => {
     }
 });
 
-// تحديث واجهة البطاقة للمستخدم
 function updateUserUI(data) {
     const nameEl = document.getElementById('user-name');
     const photoEl = document.getElementById('user-photo');
@@ -97,58 +90,99 @@ function updateUserUI(data) {
 
     if (nameEl) nameEl.innerText = data.name;
     if (photoEl) photoEl.src = data.photo;
-    
     if (cardEl) {
-        // تنسيق الرقم (كل 4 أرقام مسافة)
         cardEl.innerText = data.cardNumber.match(/.{1,4}/g).join(' ');
+        cardEl.setAttribute('data-raw', data.cardNumber); // حفظ الرقم بدون مسافات للنسخ
     }
-    
-    if (balanceEl) balanceEl.innerText = `الرصيد: ${data.balance} دولار (نقطة)`;
+    if (balanceEl) balanceEl.innerText = `الرصيد: ${data.balance} دولار`;
 }
 
-// دالة شراء الكوينزات (للمستخدم)
-function purchaseCoins(priceUSD, coinsAmount) {
-    const user = auth.currentUser;
-    if (!user) {
+// نسخ رقم البطاقة
+function copyCard() {
+    const cardEl = document.getElementById('card-number');
+    const rawNumber = cardEl.getAttribute('data-raw');
+    if(rawNumber) {
+        navigator.clipboard.writeText(rawNumber).then(() => {
+            alert("تم نسخ رقم البطاقة: " + rawNumber);
+        });
+    }
+}
+
+// إغلاق جميع النوافذ المنبثقة
+function closeModals() {
+    document.getElementById('id-modal').style.display = 'none';
+    document.getElementById('wa-modal').style.display = 'none';
+    document.getElementById('wait-modal').style.display = 'none';
+    document.getElementById('yalla-id-input').value = '';
+}
+
+// بدء عملية الشراء (فحص الرصيد أولاً)
+function initiatePurchase(priceUSD, coinsAmount) {
+    if (!auth.currentUser || !currentUserData) {
         alert("يرجى تسجيل الدخول أولاً.");
         return;
     }
 
-    const userRef = db.ref('users/' + user.uid);
-    userRef.once('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data.balance >= priceUSD) {
-            // خصم الرصيد
-            const newBalance = data.balance - priceUSD;
-            userRef.update({ balance: newBalance }).then(() => {
-                alert(`تم شحن ${coinsAmount} كوينز بنجاح! تم خصم ${priceUSD} نقاط.`);
-                handleUserWallet(user); // تحديث الواجهة
-            });
-        } else {
-            alert("رصيد النقاط (الدولار) غير كافٍ. يرجى شحن بطاقتك.");
-        }
-    });
+    if (currentUserData.balance >= priceUSD) {
+        // الرصيد كافٍ -> أظهر نافذة إدخال الأيدي
+        pendingPurchase = { priceUSD, coinsAmount };
+        document.getElementById('id-modal').style.display = 'flex';
+    } else {
+        // الرصيد غير كافٍ -> أظهر نافذة الواتساب
+        const waNumber = "905424678123";
+        const message = `مرحباً، أريد شحن بطاقتي.\nرقم بطاقتي هو: ${currentUserData.cardNumber}\nأحتاج لشحن باقة ${priceUSD} دولار.`;
+        document.getElementById('wa-link').href = `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
+        document.getElementById('wa-modal').style.display = 'flex';
+    }
 }
 
-// دالة شحن حساب مستخدم (للأدمن)
-function adminChargeWallet(cardNumber, amountUSD) {
-    const cardsRef = db.ref('cards/' + cardNumber);
-    
-    cardsRef.once('value', (cardSnapshot) => {
-        if (cardSnapshot.exists()) {
-            const uid = cardSnapshot.val().uid;
-            const userRef = db.ref('users/' + uid);
-            
-            userRef.once('value', (userSnapshot) => {
-                const currentBalance = userSnapshot.val().balance || 0;
-                const newBalance = currentBalance + parseInt(amountUSD);
-                
-                userRef.update({ balance: newBalance }).then(() => {
-                    document.getElementById('admin-msg').innerHTML = `<span style="color:green;">تم شحن بطاقة ${cardNumber} بمبلغ ${amountUSD} دولار بنجاح! الرصيد الجديد: ${newBalance}</span>`;
-                });
+// تأكيد الشراء وإرسال الطلب للتليجرام
+function confirmPurchase() {
+    const yallaId = document.getElementById('yalla-id-input').value.trim();
+    if (!yallaId) {
+        alert("يرجى إدخال الأيدي (ID) الخاص بك بشكل صحيح!");
+        return;
+    }
+
+    // إخفاء نافذة الأيدي وإظهار شاشة الانتظار
+    document.getElementById('id-modal').style.display = 'none';
+    document.getElementById('wait-modal').style.display = 'flex';
+
+    const userRef = db.ref('users/' + auth.currentUser.uid);
+    const newBalance = currentUserData.balance - pendingPurchase.priceUSD;
+
+    // خصم الرصيد
+    userRef.update({ balance: newBalance }).then(() => {
+        
+        // إرسال البيانات إلى بوت التليجرام
+        const botToken = "7566249177:AAF_6YijyHlkcegWberO0U9XVXzw1yHvdpM";
+        const chatId = "5998250367";
+        const msg = `✅ طلب شحن جديد ناجح!\n\n` +
+                    `👤 اسم المستخدم: ${currentUserData.name}\n` +
+                    `💳 رقم البطاقة: ${currentUserData.cardNumber}\n` +
+                    `🎮 أيدي يلا لايف (ID): ${yallaId}\n` +
+                    `💰 الباقة: ${pendingPurchase.coinsAmount} كوينز\n` +
+                    `💵 المبلغ المخصوم: ${pendingPurchase.priceUSD} دولار\n` +
+                    `💳 الرصيد المتبقي: ${newBalance} دولار`;
+        
+        const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(msg)}`;
+        
+        fetch(telegramUrl)
+            .then(response => {
+                setTimeout(() => {
+                    closeModals();
+                    alert(`تم استلام طلبك بنجاح! سيتم شحن حسابك (ID: ${yallaId}) قريباً.`);
+                }, 3000); // محاكاة شاشة الانتظار لمدة 3 ثواني
+            })
+            .catch(error => {
+                console.error("خطأ في التليجرام:", error);
+                closeModals();
+                alert("تم خصم الرصيد، ولكن حدث خطأ في إرسال الطلب للوكيل. يرجى مراجعة الدعم.");
             });
-        } else {
-            document.getElementById('admin-msg').innerHTML = `<span style="color:red;">رقم البطاقة غير موجود! تأكد من صحة الـ 16 رقم.</span>`;
-        }
+
+    }).catch(error => {
+        closeModals();
+        alert("حدث خطأ في قاعدة البيانات ولم يتم خصم الرصيد.");
     });
 }
+ج

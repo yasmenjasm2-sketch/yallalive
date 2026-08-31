@@ -3,264 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شحن كوينزات يلا لايف</title>
-    <!-- مكتبات Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <title>شحن كوينزات Yalla Live</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; text-align: center; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .btn-google { background-color: #4285F4; color: white; padding: 12px 24px; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 10px;}
-        .btn-google:hover { background-color: #357ae8; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; text-align: center; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .btn { background: #4285F4; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .btn:hover { background: #3367D6; }
         
         /* تصميم البطاقة البنكية */
-        .bank-card {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white; border-radius: 15px; padding: 25px; margin: 20px auto;
-            max-width: 400px; text-align: left; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            direction: ltr;
-        }
-        .card-chip { width: 40px; height: 30px; background: gold; border-radius: 5px; margin-bottom: 20px; }
-        .card-number { font-size: 24px; letter-spacing: 2px; margin-bottom: 15px; font-family: monospace; }
-        .card-details { display: flex; justify-content: space-between; align-items: flex-end; }
-        .card-name { font-size: 14px; text-transform: uppercase; }
-        .card-balance { font-size: 18px; font-weight: bold; color: #4ade80; }
+        .card-container { display: none; max-width: 400px; margin: 0 auto 30px auto; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; border-radius: 15px; padding: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); text-align: left; position: relative; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .card-header img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid white; }
+        .card-name { font-size: 18px; font-weight: bold; margin-left: 10px; text-transform: uppercase;}
+        .card-chip { width: 40px; height: 30px; background: gold; border-radius: 5px; margin-bottom: 15px; }
+        .card-number-display { font-size: 22px; letter-spacing: 2px; margin-bottom: 15px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        .card-balance { font-size: 16px; font-weight: bold; }
         
-        .profile-header { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; }
-        .profile-header img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #1e3c72; }
-        
-        /* إدخال المعرف والمنتجات */
-        .input-group { margin: 25px 0; }
-        .input-group input { padding: 12px; width: 80%; max-width: 300px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; text-align: center;}
-        
-        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-top: 20px; }
-        .package-card {
-            border: 2px solid #e1e4e8; border-radius: 8px; padding: 15px; background: #fff; cursor: pointer;
-            transition: all 0.3s; position: relative;
-        }
-        .package-card:hover { border-color: #2a5298; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .price { color: #2a5298; font-size: 20px; font-weight: bold; margin-bottom: 5px; }
-        .coins { color: #666; font-size: 18px; }
-        .badge { background: #e0e7ff; color: #3730a3; font-size: 12px; padding: 4px 8px; border-radius: 12px; display: inline-block; margin-top: 10px; font-weight: bold;}
-        .logout-btn { background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-top: 20px; }
+        /* قائمة الباقات */
+        .packages-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; max-width: 800px; margin: auto; }
+        .package { background: white; border: 2px solid #e0e0e0; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.3s; }
+        .package:hover { border-color: #4285F4; transform: translateY(-5px); }
+        .price { color: #2c6bed; font-size: 20px; font-weight: bold; margin-bottom: 5px; }
+        .coins { font-size: 18px; color: #555; }
+        .badge { background: #e3f2fd; color: #1976d2; padding: 5px 10px; border-radius: 15px; font-size: 12px; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <!-- قسم تسجيل الدخول -->
-    <div id="login-section">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png" width="50" alt="Google">
-        <h2>أهلاً بك في نظام شحن يلا لايف</h2>
-        <p>يجب تسجيل الدخول لإنشاء محفظتك الافتراضية والبدء بالشحن.</p>
-        <button class="btn-google" onclick="loginWithGoogle()">تسجيل الدخول عبر Google</button>
+    <div class="header">
+        <h2>متجر الشحن</h2>
+        <button id="login-btn" class="btn" onclick="loginWithGoogle()">تسجيل الدخول بـ Google</button>
+        <button id="logout-btn" class="btn" style="display:none; background:#d32f2f;" onclick="logout()">تسجيل الخروج</button>
     </div>
 
-    <!-- قسم النظام الأساسي (يظهر بعد تسجيل الدخول) -->
-    <div id="app-section" style="display: none;">
-        <div class="profile-header">
+    <div id="user-section" class="card-container" dir="ltr">
+        <div class="card-header">
             <img id="user-photo" src="" alt="Profile">
-            <h3 id="user-name">...</h3>
+            <span id="user-name" class="card-name">User Name</span>
+            <span style="font-weight:bold; font-style:italic;">Yalla Card</span>
         </div>
-
-        <!-- البطاقة الافتراضية -->
-        <div class="bank-card">
-            <div class="card-chip"></div>
-            <div class="card-number" id="card-number">XXXX XXXX XXXX XXXX</div>
-            <div class="card-details">
-                <div class="card-name">YALLA CARD</div>
-                <div class="card-balance" id="user-balance">0 USD</div>
-            </div>
-        </div>
-
-        <div class="input-group">
-            <h3>أدخل معرف يلا (ID) المراد شحنه:</h3>
-            <input type="number" id="yalla-id" placeholder="مثال: 12345678">
-        </div>
-
-        <h3>اختر الباقة (تمت إضافة 1$ للأسعار):</h3>
-        <div class="grid-container">
-            <div class="package-card" onclick="purchaseCoins(7, 520)">
-                <div class="price">USD 7</div>
-                <div class="coins">🟡 520</div>
-                <div class="badge">🎁 İlk Çekim</div>
-            </div>
-            <div class="package-card" onclick="purchaseCoins(13, 1155)">
-                <div class="price">USD 13</div>
-                <div class="coins">🟡 1.155</div>
-                <div class="badge">🎁 İlk Çekim</div>
-            </div>
-            <div class="package-card" onclick="purchaseCoins(41, 3820)">
-                <div class="price">USD 41</div>
-                <div class="coins">🟡 3.820</div>
-                <div class="badge">🎁 İlk Çekim</div>
-            </div>
-            <div class="package-card" onclick="purchaseCoins(61, 5930)">
-                <div class="price">USD 61</div>
-                <div class="coins">🟡 5.930</div>
-                <div class="badge">🎁 İlk Çekim</div>
-            </div>
-            <div class="package-card" onclick="purchaseCoins(121, 12550)">
-                <div class="price">USD 121</div>
-                <div class="coins">🟡 12.550</div>
-                <div class="badge">🎁 İlk Çekim</div>
-            </div>
-            <div class="package-card" onclick="purchaseCoins(200, 20900)">
-                <div class="price">USD 200</div>
-                <div class="coins">🟡 20.900</div>
-                <div class="badge">🎁 İlk Çekim</div>
-            </div>
-            <div class="package-card" onclick="purchaseCoins(360, 37800)">
-                <div class="price">USD 360</div>
-                <div class="coins">🟡 37.800</div>
-                <div class="badge">🎁 İlk Çekim</div>
-            </div>
-        </div>
-
-        <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
+        <div class="card-chip"></div>
+        <div id="card-number" class="card-number-display">**** **** **** ****</div>
+        <div id="user-balance" class="card-balance">الرصيد: 0 دولار</div>
     </div>
-</div>
 
-<script>
-    // 1. إعدادات Firebase (يجب وضع بياناتك هنا من إعدادات مشروعك في فايربيس)
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-        databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_PROJECT_ID.appspot.com",
-        messagingSenderId: "YOUR_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
+    <h3>باقات الشحن المتوفرة</h3>
+    <div class="packages-grid">
+        <div class="package" onclick="purchaseCoins(7, '520')">
+            <div class="price">USD 7</div>
+            <div class="coins">🪙 520</div>
+            <div class="badge">🎁 شحن عبر الـ ID</div>
+        </div>
+        <div class="package" onclick="purchaseCoins(13, '1,155')">
+            <div class="price">USD 13</div>
+            <div class="coins">🪙 1,155</div>
+            <div class="badge">🎁 شحن عبر الـ ID</div>
+        </div>
+        <div class="package" onclick="purchaseCoins(41, '3,820')">
+            <div class="price">USD 41</div>
+            <div class="coins">🪙 3,820</div>
+            <div class="badge">🎁 شحن عبر الـ ID</div>
+        </div>
+        <div class="package" onclick="purchaseCoins(61, '5,930')">
+            <div class="price">USD 61</div>
+            <div class="coins">🪙 5,930</div>
+            <div class="badge">🎁 شحن عبر الـ ID</div>
+        </div>
+        <div class="package" onclick="purchaseCoins(121, '12,550')">
+            <div class="price">USD 121</div>
+            <div class="coins">🪙 12,550</div>
+            <div class="badge">🎁 شحن عبر الـ ID</div>
+        </div>
+        <div class="package" onclick="purchaseCoins(200, '20,900')">
+            <div class="price">USD 200</div>
+            <div class="coins">🪙 20,900</div>
+            <div class="badge">🎁 شحن عبر الـ ID</div>
+        </div>
+        <div class="package" onclick="purchaseCoins(360, '37,800')">
+            <div class="price">USD 360</div>
+            <div class="coins">🪙 37,800</div>
+            <div class="badge">🎁 شحن عبر الـ ID</div>
+        </div>
+    </div>
 
-    // تهيئة Firebase إذا لم يكن مهيئاً مسبقاً
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
-    const auth = firebase.auth();
-    const db = firebase.database();
-    let currentUser = null;
-    let currentBalance = 0;
-
-    // 2. مراقبة حالة تسجيل الدخول
-    auth.onAuthStateChanged((user) => {
-        if (user) {
-            currentUser = user;
-            document.getElementById('login-section').style.display = 'none';
-            document.getElementById('app-section').style.display = 'block';
-            
-            document.getElementById('user-name').innerText = user.displayName;
-            document.getElementById('user-photo').src = user.photoURL;
-            
-            checkAndCreateUserData(user);
-        } else {
-            currentUser = null;
-            document.getElementById('login-section').style.display = 'block';
-            document.getElementById('app-section').style.display = 'none';
-        }
-    });
-
-    // 3. تسجيل الدخول بجوجل
-    function loginWithGoogle() {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).catch((error) => {
-            console.error("خطأ في تسجيل الدخول:", error);
-            alert("فشل تسجيل الدخول. حاول مرة أخرى.");
-        });
-    }
-
-    // 4. تسجيل الخروج
-    function logout() {
-        auth.signOut();
-    }
-
-    // 5. إنشاء حساب المستخدم في قاعدة البيانات وإنشاء رقم بطاقة ورصيد إذا لم يكن موجوداً
-    function checkAndCreateUserData(user) {
-        const userRef = db.ref('users/' + user.uid);
-        
-        userRef.once('value').then((snapshot) => {
-            if (!snapshot.exists()) {
-                // إذا كان مستخدماً جديداً، أنشئ له بطاقة بـ 16 رقماً ورصيد 0
-                const newCardNumber = generateCardNumber();
-                userRef.set({
-                    name: user.displayName,
-                    email: user.email,
-                    cardNumber: newCardNumber,
-                    balance: 0 // هذا الرصيد الذي سيعدله الأدمن
-                });
-                
-                updateCardUI(newCardNumber, 0);
-            } else {
-                // إذا كان المستخدم موجوداً، جلب بياناته
-                const data = snapshot.val();
-                updateCardUI(data.cardNumber, data.balance);
-            }
-            
-            // مراقبة الرصيد بشكل لحظي (إذا قام الأدمن بشحنه، سيتغير فوراً)
-            userRef.child('balance').on('value', (balanceSnapshot) => {
-                const bal = balanceSnapshot.val() || 0;
-                currentBalance = bal;
-                document.getElementById('user-balance').innerText = bal + " USD";
-            });
-        });
-    }
-
-    // 6. توليد رقم بطاقة وهمي من 16 رقماً
-    function generateCardNumber() {
-        let card = "";
-        for(let i = 0; i < 4; i++){
-            card += Math.floor(1000 + Math.random() * 9000).toString() + (i < 3 ? " " : "");
-        }
-        return card;
-    }
-
-    // 7. تحديث واجهة البطاقة
-    function updateCardUI(cardNumber, balance) {
-        document.getElementById('card-number').innerText = cardNumber;
-        document.getElementById('user-balance').innerText = balance + " USD";
-        currentBalance = balance;
-    }
-
-    // 8. عملية الشراء وخصم الرصيد
-    function purchaseCoins(price, coins) {
-        const yallaId = document.getElementById('yalla-id').value;
-        
-        if (!yallaId) {
-            alert("يرجى إدخال معرف يلا (ID) أولاً!");
-            return;
-        }
-
-        if (currentBalance >= price) {
-            // خصم الرصيد
-            const newBalance = currentBalance - price;
-            
-            // تحديث الرصيد في قاعدة البيانات
-            db.ref('users/' + currentUser.uid).update({
-                balance: newBalance
-            }).then(() => {
-                // حفظ عملية الشراء للأدمن ليقوم بتنفيذها فعلياً في يلا لايف
-                const orderRef = db.ref('orders').push();
-                orderRef.set({
-                    userId: currentUser.uid,
-                    userName: currentUser.displayName,
-                    yallaId: yallaId,
-                    packagePrice: price,
-                    coinsAmount: coins,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP,
-                    status: "pending" // بانتظار تنفيذ الأدمن
-                });
-                
-                alert(`تم الشراء بنجاح! سيتم إرسال ${coins} كوينز إلى المعرف ${yallaId}. الرصيد المتبقي: ${newBalance}$`);
-            }).catch((error) => {
-                alert("حدث خطأ أثناء الشراء: " + error.message);
-            });
-            
-        } else {
-            alert("رصيدك غير كافٍ لإتمام هذه العملية! يرجى التواصل مع الإدارة لشحن بطاقتك.");
-        }
-    }
-</script>
+    <script src="points.js"></script>
 </body>
 </html>

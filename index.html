@@ -57,23 +57,60 @@
             letter-spacing: -0.5px;
         }
 
-        .btn { 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            padding: 12px 24px; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            font-size: 16px; 
-            font-weight: 700; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        /* زر جوجل الاحترافي */
+        .google-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #ffffff;
+            color: #3c4043;
+            border: 1px solid #dadce0;
+            padding: 10px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
-        
-        .btn:hover { 
-            background: var(--primary-hover); 
+        .google-btn:hover {
+            background: #f8f9fa;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3); 
+        }
+        .google-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* زر الخروج (أيقونة فقط) */
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+        .logout-btn:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
+        }
+        .logout-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         /* صندوق المعلومات - Info Box */
@@ -192,13 +229,6 @@
             box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
         }
         
-        .card-chip::after {
-            content: '';
-            position: absolute;
-            top: 50%; left: 0; right: 0;
-            height: 1px; background: rgba(0,0,0,0.1);
-        }
-        
         .card-number-wrapper { 
             display: flex; 
             justify-content: space-between; 
@@ -232,15 +262,37 @@
             background: rgba(255,255,255,0.25); 
         }
         
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
         .card-balance { 
             font-size: 18px; 
             font-weight: 700; 
-            position: relative; 
-            z-index: 1; 
             color: var(--secondary); 
-            text-align: right;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 15px;
+        }
+
+        .btn-recharge {
+            background: linear-gradient(135deg, var(--gold), #d97706);
+            color: #000;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-weight: 900;
+            font-family: 'Cairo', sans-serif;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 10px rgba(251, 191, 36, 0.3);
+        }
+        .btn-recharge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 15px rgba(251, 191, 36, 0.5);
         }
         
         /* الباقات - Packages */
@@ -500,8 +552,26 @@
 
     <div class="header">
         <h2>متجر الشحن</h2>
-        <button id="login-btn" class="btn" onclick="loginWithGoogle()">تسجيل الدخول بـ Google</button>
-        <button id="logout-btn" class="btn" style="display:none; background:#ef4444; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);" onclick="logout()">تسجيل الخروج</button>
+        
+        <!-- زر تسجيل الدخول باحترافية وتصميم جوجل -->
+        <button id="login-btn" class="google-btn" onclick="loginWithGoogle()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            تسجيل الدخول
+        </button>
+
+        <!-- زر تسجيل الخروج كأيقونة فقط -->
+        <button id="logout-btn" class="logout-btn" style="display:none;" onclick="logout()" title="تسجيل الخروج">
+            <svg viewBox="0 0 24 24">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+        </button>
     </div>
 
     <div class="info-box">
@@ -523,7 +593,12 @@
             <div id="card-number" class="card-number-display">**** **** **** ****</div>
             <button class="copy-btn" onclick="copyCard()">نسخ الرقم</button>
         </div>
-        <div id="user-balance" class="card-balance">الرصيد: 0 دولار</div>
+        
+        <div class="card-footer">
+            <div id="user-balance" class="card-balance">الرصيد: 0 دولار</div>
+            <!-- الزر الجديد للتوجه لنظام الشحن -->
+            <button class="btn-recharge" onclick="window.location.href='recharge.html'">اشحن رصيد الآن</button>
+        </div>
     </div>
 
     <h3 class="section-title">باقات الشحن المتوفرة</h3>
@@ -531,7 +606,7 @@
         <div class="package" onclick="initiatePurchase(7, '520')">
             <div class="price-wrapper">
                 <span class="price">USD 7</span>
-                <img src="hamzadd.jpg" class="coin-img" alt="Coin">
+                <img src="hamzadd.jpg" class="coin-img" alt="Coin" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
             </div>
             <div class="coins">520 كوينز</div>
             <div class="badge">شحن فوري عبر الـ ID</div>
@@ -539,7 +614,7 @@
         <div class="package" onclick="initiatePurchase(13, '1,155')">
             <div class="price-wrapper">
                 <span class="price">USD 13</span>
-                <img src="hamzadd.jpg" class="coin-img" alt="Coin">
+                <img src="hamzadd.jpg" class="coin-img" alt="Coin" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
             </div>
             <div class="coins">1,155 كوينز</div>
             <div class="badge">شحن فوري عبر الـ ID</div>
@@ -547,7 +622,7 @@
         <div class="package" onclick="initiatePurchase(41, '3,820')">
             <div class="price-wrapper">
                 <span class="price">USD 41</span>
-                <img src="hamzadd.jpg" class="coin-img" alt="Coin">
+                <img src="hamzadd.jpg" class="coin-img" alt="Coin" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
             </div>
             <div class="coins">3,820 كوينز</div>
             <div class="badge">شحن فوري عبر الـ ID</div>
@@ -555,7 +630,7 @@
         <div class="package" onclick="initiatePurchase(61, '5,930')">
             <div class="price-wrapper">
                 <span class="price">USD 61</span>
-                <img src="hamzadd.jpg" class="coin-img" alt="Coin">
+                <img src="hamzadd.jpg" class="coin-img" alt="Coin" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
             </div>
             <div class="coins">5,930 كوينز</div>
             <div class="badge">شحن فوري عبر الـ ID</div>
@@ -563,7 +638,7 @@
         <div class="package" onclick="initiatePurchase(121, '12,550')">
             <div class="price-wrapper">
                 <span class="price">USD 121</span>
-                <img src="hamzadd.jpg" class="coin-img" alt="Coin">
+                <img src="hamzadd.jpg" class="coin-img" alt="Coin" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
             </div>
             <div class="coins">12,550 كوينز</div>
             <div class="badge">شحن فوري عبر الـ ID</div>
@@ -571,7 +646,7 @@
         <div class="package" onclick="initiatePurchase(200, '20,900')">
             <div class="price-wrapper">
                 <span class="price">USD 200</span>
-                <img src="hamzadd.jpg" class="coin-img" alt="Coin">
+                <img src="hamzadd.jpg" class="coin-img" alt="Coin" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
             </div>
             <div class="coins">20,900 كوينز</div>
             <div class="badge">شحن فوري عبر الـ ID</div>
@@ -579,7 +654,7 @@
         <div class="package" onclick="initiatePurchase(360, '37,800')">
             <div class="price-wrapper">
                 <span class="price">USD 360</span>
-                <img src="hamzadd.jpg" class="coin-img" alt="Coin">
+                <img src="hamzadd.jpg" class="coin-img" alt="Coin" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
             </div>
             <div class="coins">37,800 كوينز</div>
             <div class="badge">شحن فوري عبر الـ ID</div>
@@ -601,13 +676,15 @@
     <div id="wa-modal" class="modal-overlay">
         <div class="modal-box">
             <h3 style="color:#ef4444;">رصيدك غير متاح</h3>
-            <p class="modal-desc" style="margin-bottom:15px;">رصيدك الحالي لا يكفي لإتمام عملية الشراء. قم بالتواصل معنا لتعبئة رصيدك.</p>
+            <p class="modal-desc" style="margin-bottom:15px;">رصيدك الحالي لا يكفي لإتمام عملية الشراء. قم بتعبئة رصيدك أو تواصل معنا.</p>
             
             <p style="font-size:14px; color:var(--text-muted); margin-bottom:8px; text-align:right;">رقم بطاقتك لتسهيل الشحن:</p>
             <div class="card-copy-box">
                 <span id="modal-card-number" class="card-copy-number" dir="ltr">---- ---- ---- ----</span>
                 <button class="copy-btn" style="background:var(--primary); color:white;" onclick="copyModalCard()">نسخ</button>
             </div>
+
+            <button class="btn-confirm" style="background: var(--primary);" onclick="window.location.href='recharge.html'">الذهاب لصفحة شحن الرصيد</button>
 
             <a href="#" id="wa-link" target="_blank" class="wa-btn">
                 تواصل معنا عبر الواتساب
@@ -673,6 +750,7 @@
         function handleUserWallet(user) {
             const userRef = db.ref('users/' + user.uid);
             
+            // استخدام on لمراقبة الرصيد لحظياً وتحديثه بالشاشة بمجرد الشحن من الملف الثاني
             userRef.on('value', (snapshot) => {
                 if (!snapshot.exists()) {
                     const newCardNumber = generateCardNumber();
@@ -704,11 +782,11 @@
 
             if (user) {
                 if(loginBtn) loginBtn.style.display = 'none';
-                if(logoutBtn) logoutBtn.style.display = 'block';
+                if(logoutBtn) logoutBtn.style.display = 'flex';
                 if(userSection) userSection.style.display = 'block';
                 handleUserWallet(user);
             } else {
-                if(loginBtn) loginBtn.style.display = 'block';
+                if(loginBtn) loginBtn.style.display = 'flex';
                 if(logoutBtn) logoutBtn.style.display = 'none';
                 if(userSection) userSection.style.display = 'none';
             }
@@ -754,7 +832,6 @@
             document.getElementById('yalla-id-input').value = '';
         }
 
-        // بدء الشراء والتحقق من الرصيد
         function initiatePurchase(priceUSD, coinsAmount) {
             if (!auth.currentUser || !currentUserData) {
                 alert("يرجى تسجيل الدخول أولاً لشراء الباقات.");
@@ -762,11 +839,9 @@
             }
 
             if (currentUserData.balance >= priceUSD) {
-                // الرصيد كافٍ -> فتح شاشة طلب ID
                 pendingPurchase = { priceUSD, coinsAmount };
                 document.getElementById('id-modal').style.display = 'flex';
             } else {
-                // الرصيد غير متاح -> فتح شاشة التوجيه للواتساب ورقم البطاقة
                 const modalCardEl = document.getElementById('modal-card-number');
                 if(modalCardEl) {
                     modalCardEl.innerText = currentUserData.cardNumber.match(/.{1,4}/g).join(' ');
@@ -779,7 +854,6 @@
             }
         }
 
-        // تأكيد الشراء من الشاشة المنبثقة للـ ID
         function confirmPurchase() {
             const yallaId = document.getElementById('yalla-id-input').value.trim();
             if (!yallaId) {
@@ -787,17 +861,14 @@
                 return;
             }
 
-            // إخفاء نافذة الـ ID وإظهار شاشة الانتظار
             document.getElementById('id-modal').style.display = 'none';
             document.getElementById('wait-modal').style.display = 'flex';
 
             const userRef = db.ref('users/' + auth.currentUser.uid);
             const newBalance = currentUserData.balance - pendingPurchase.priceUSD;
 
-            // خصم الرصيد تلقائياً من قاعدة البيانات
             userRef.update({ balance: newBalance }).then(() => {
                 
-                // إرسال التفاصيل مباشرة لتليجرام الشحن اليدوي (تم تنسيق النص وازالة الايموجي)
                 const botToken = "7566249177:AAF_6YijyHlkcegWberO0U9XVXzw1yHvdpM";
                 const chatId = "5998250367";
                 const msg = `[ طلب شحن تلقائي جديد ]\n\n` +

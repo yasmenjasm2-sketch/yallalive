@@ -43,7 +43,7 @@ button,input{font:inherit}button{cursor:pointer;color:inherit;border:0}
    <button class="outline" id="leaveSeat" disabled>مغادرة المايك</button>
    <button class="primary" id="micBtn">🎙️ دخول الصوت</button>
   </div>
-  <div class="notice" id="audioNotice">LiveKit مهيأ للتجربة. اسمح للمتصفح باستخدام الميكروفون عند الطلب. (يفضل فتح الرابط عبر HTTPS).</div>
+  <div class="notice" id="audioNotice">اضغط على زر المايك وسيطلب منك المتصفح السماح باستخدام الميكروفون للتواصل الصوتي.</div>
  </section>
  <section class="chat">
   <div class="chat-head"><b>💬 الدردشة</b><small id="chatMode">رسائل هذه التجربة</small></div>
@@ -53,159 +53,183 @@ button,input{font:inherit}button{cursor:pointer;color:inherit;border:0}
  <footer class="footer"><span>WASL LIVE © 2026</span><span>نسخة تجريبية</span></footer>
 </div>
 
-<div class="modal-bg" id="modalBg"><div class="modal"><h3 id="modalTitle">إعدادات الغرفة</h3><p id="modalDesc">يمكنك تعديل اسمك وإعداد الاتصال بالخدمات.</p><label>اسم العرض</label><input id="nameField" maxlength="24" placeholder="اكتب اسمك"><label>Firebase Realtime Database URL (اختياري)</label><input id="dbField" placeholder="https://....firebasedatabase.app"><p class="notice">تم إعداد LiveKit من بيانات الصورة للتجربة المباشرة. تنبيه: مفتاح API السري موجود داخل ملف التجربة ويمكن لأي شخص فتحه؛ لا تنشر هذا الملف ولا تستخدمه للإنتاج.</p><div class="rowbtn"><button class="secondary" id="cancelModal">إلغاء</button><button class="primary" id="saveSettings">حفظ</button></div></div></div>
+<div class="modal-bg" id="modalBg"><div class="modal"><h3 id="modalTitle">إعدادات الغرفة</h3><p id="modalDesc">يمكنك تعديل اسمك وإعداد الاتصال بالخدمات.</p><label>اسم العرض</label><input id="nameField" maxlength="24" placeholder="اكتب اسمك"><label>Firebase Realtime Database URL (اختياري للدردشة)</label><input id="dbField" placeholder="https://wasl-live-default-rtdb.firebaseio.com"><p class="notice">تنبيه: مفتاح LiveKit السري موجود في الكود للتجربة. لا تستخدم هذا الملف في بيئة إنتاج حقيقية دون تأمين المفاتيح عبر سيرفر.</p><div class="rowbtn"><button class="secondary" id="cancelModal">إلغاء</button><button class="primary" id="saveSettings">حفظ</button></div></div></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
 <script>
-/* إعدادات Firebase */
-const firebaseConfig={
- apiKey:"AIzaSyAKYeoRhJRBuJUM_4xXT9Iz301vbY6taz8",
- authDomain:"wasl-live.firebaseapp.com",
- projectId:"wasl-live",
- storageBucket:"wasl-live.firebasestorage.app",
- messagingSenderId:"1086452010878",
- appId:"1:1086452010878:android:0f9f2aa42cf0f0695a2d2f"
+/* إعدادات Firebase المأخوذة من ملفك */
+const firebaseConfig = {
+  apiKey: "AIzaSyAKYeoRhJRBuJUM_4xXT9Iz301vbY6taz8",
+  authDomain: "wasl-live.firebaseapp.com",
+  projectId: "wasl-live",
+  storageBucket: "wasl-live.firebasestorage.app",
+  messagingSenderId: "1086452010878",
+  appId: "1:1086452010878:android:0f9f2aa42cf0f0695a2d2f"
 };
 
-/* بيانات LiveKit المأخوذة من الصورة */
-const LIVEKIT_URL="wss://wasl-live-464jp07n.livekit.cloud";
-const LIVEKIT_API_KEY="API7g98sAUMYqy5";
-const LIVEKIT_API_SECRET="FKfetteoyYnsApoYsoq2JOgeW9qNXklY2NZHug5cVQZB";
-const ROOM_ID="wasl-public-room";
+/* بيانات LiveKit الخاصة بك */
+const LIVEKIT_URL = "wss://wasl-live-464jp07n.livekit.cloud";
+const LIVEKIT_API_KEY = "API7g98sAUMYqy5";
+const LIVEKIT_API_SECRET = "FKfetteoyYnsApoYsoq2JOgeW9qNXklY2NZHug5cVQZB";
 
-const $=id=>document.getElementById(id);
-const guestId="guest_"+Math.random().toString(36).slice(2,10);
-let name=localStorage.getItem("wasl_name")||"ضيف";
-let dbUrl=localStorage.getItem("wasl_db_url")||"";
+/* ربط الجميع في غرفة واحدة */
+const ROOM_ID = "wasl-main-room"; 
 
-let db=null,room=null,mySeat=null,myMic=false,remoteSeats={},chatRef=null,seatRef=null;
-let firebaseReady=false;
+const $ = id => document.getElementById(id);
+const guestId = "guest_" + Math.random().toString(36).slice(2, 10);
+let name = localStorage.getItem("wasl_name") || "ضيف";
+let dbUrl = localStorage.getItem("wasl_db_url") || "";
 
-function safeText(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-function profile(){ $("displayName").textContent=name;$("avatar").textContent=[...name][0]||"ض";$("userId").textContent="ID: "+guestId.slice(-8).toUpperCase();}
-function systemMessage(t){const e=document.createElement("div");e.className="system";e.textContent=t;$("messages").append(e);$("messages").scrollTop=$("messages").scrollHeight;}
-function addMessage(who,text,mine=false,time=Date.now()){const el=document.createElement("div");el.className="msg"+(mine?" mine":"");const d=new Date(time);el.innerHTML="<b>"+safeText(who)+"</b><p>"+safeText(text)+"</p><time>"+d.toLocaleTimeString("ar",{hour:"2-digit",minute:"2-digit"})+"</time>";$("messages").append(el);$("messages").scrollTop=$("messages").scrollHeight;}
-function renderSeats(){
- const host=$("seats");host.innerHTML="";
- for(let i=1;i<=10;i++){
-  const occupant=remoteSeats[i];const mine=mySeat===i;
-  const btn=document.createElement("button");btn.className="seat"+(occupant?" occupied":"")+(mine?" mine":"");
-  btn.innerHTML='<span class="seat-circle"><span class="mic">'+(occupant?(occupant.muted?"🔇":"🎙️"):"🎙️")+'</span>'+(occupant?'<span class="lock">●</span>':'')+'</span><span class="seat-num">'+i+'</span><span class="seat-name">'+(occupant?safeText(occupant.name):"متاح")+'</span>';
-  btn.addEventListener("click",()=>selectSeat(i));host.append(btn);
- }
- $("leaveSeat").disabled=mySeat===null;
- $("onlineCount").textContent=String(Math.max(1,Object.keys(remoteSeats).filter(k=>remoteSeats[k]).length+1));
-}
-async function initFirebase(){
- if(!dbUrl){$("connectionState").textContent="وضع التجربة";return;}
- try{
-  if(!firebase.apps.length)firebase.initializeApp({...firebaseConfig,databaseURL:dbUrl});
-  db=firebase.database();firebaseReady=true;
-  const roomRoot=db.ref("waslRooms/"+ROOM_ID);
-  chatRef=roomRoot.child("messages");seatRef=roomRoot.child("seats");
-  chatRef.limitToLast(60).on("child_added",s=>{const m=s.val();if(m&&m.uid!==guestId)addMessage(m.name||"ضيف",m.text||"",false,m.time||Date.now());});
-  seatRef.on("value",s=>{remoteSeats=s.val()||{};renderSeats();});
-  $("connectionState").textContent="متصل بفايربيس";$("chatMode").textContent="دردشة مشتركة";
-  systemMessage("تم الاتصال بقاعدة البيانات");
- }catch(e){console.error(e);$("connectionState").textContent="تعذر الاتصال";systemMessage("تعذر الاتصال بفايربيس. تحقق من الرابط وقواعد قاعدة البيانات.");}
-}
-async function sendMessage(text){
- if(!text.trim())return;
- if(firebaseReady&&chatRef){try{await chatRef.push({uid:guestId,name,text:text.trim(),time:Date.now()});addMessage(name,text.trim(),true);return;}catch(e){systemMessage("تعذر إرسال الرسالة إلى السيرفر.");}}
- addMessage(name,text.trim(),true);
-}
-$("chatForm").addEventListener("submit",e=>{e.preventDefault();const v=$("messageInput").value;$("messageInput").value="";sendMessage(v);});
-async function selectSeat(n){
- if(mySeat===n){await leaveSeat();return;}
- if(remoteSeats[n]){systemMessage("هذا المقعد مشغول حالياً.");return;}
- if(mySeat!==null)await leaveSeat();
- mySeat=n;remoteSeats[n]={uid:guestId,name,muted:true};
- if(firebaseReady&&seatRef){try{const r=seatRef.child(String(n));await r.transaction(cur=>cur===null?{uid:guestId,name,muted:true}:undefined);const snap=await seatRef.child(String(n)).get();if(!snap.exists()||snap.val().uid!==guestId){mySeat=null;systemMessage("سبقك شخص آخر إلى هذا المقعد.");}}catch(e){systemMessage("تعذر حجز المقعد.");mySeat=null;}}
- renderSeats();$("micBtn").textContent="🎙️ تشغيل المايك";
- systemMessage("جلست على المقعد "+n+". اضغط تشغيل المايك للاتصال الصوتي.");
-}
-async function leaveSeat(){
- if(mySeat===null)return;
- const old=mySeat;mySeat=null;myMic=false;
- if(room){try{await room.localParticipant.setMicrophoneEnabled(false);}catch(e){}}
- if(firebaseReady&&seatRef){try{await seatRef.child(String(old)).transaction(cur=>cur&&cur.uid===guestId?null:cur);}catch(e){}}
- delete remoteSeats[old];$("micBtn").textContent="🎙️ دخول الصوت";renderSeats();
-}
+let db = null, room = null, mySeat = null, myMic = false, remoteSeats = {}, chatRef = null, seatRef = null;
+let firebaseReady = false;
 
-function b64url(bytes){
- const bin=Array.from(bytes,b=>String.fromCharCode(b)).join("");
- return btoa(bin).replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_");
-}
+function safeText(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function profile() { $("displayName").textContent = name; $("avatar").textContent = [...name][0] || "ض"; $("userId").textContent = "ID: " + guestId.slice(-8).toUpperCase(); }
+function systemMessage(t) { const e = document.createElement("div"); e.className = "system"; e.textContent = t; $("messages").append(e); $("messages").scrollTop = $("messages").scrollHeight; }
+function addMessage(who, text, mine = false, time = Date.now()) { const el = document.createElement("div"); el.className = "msg" + (mine ? " mine" : ""); const d = new Date(time); el.innerHTML = "<b>" + safeText(who) + "</b><p>" + safeText(text) + "</p><time>" + d.toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" }) + "</time>"; $("messages").append(el); $("messages").scrollTop = $("messages").scrollHeight; }
 
-async function createLiveKitToken(roomName,identity,displayName){
- if(!window.isSecureContext || !crypto.subtle){
-   throw new Error("المتصفح يمنع التشفير. يجب فتح الملف عبر HTTPS أو localhost (مثلاً باستخدام Live Server أو استضافة).");
- }
- if(!LIVEKIT_API_KEY.startsWith("API"))throw new Error("LiveKit API Key غير صحيح.");
- const now=Math.floor(Date.now()/1000);
- const header={alg:"HS256",typ:"JWT"};
- const payload={
-  iss:LIVEKIT_API_KEY,sub:identity,nbf:now-5,iat:now,exp:now+3600,
-  name:displayName,
-  video:{roomJoin:true,room:roomName,canPublish:true,canSubscribe:true,canPublishData:true}
- };
- const enc=new TextEncoder();
- const unsigned=b64url(enc.encode(JSON.stringify(header)))+"."+b64url(enc.encode(JSON.stringify(payload)));
- const key=await crypto.subtle.importKey("raw",enc.encode(LIVEKIT_API_SECRET),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
- const sig=await crypto.subtle.sign("HMAC",key,enc.encode(unsigned));
- return unsigned+"."+b64url(new Uint8Array(sig));
-}
-
-async function toggleMic(){
- if(mySeat===null){systemMessage("اختر مقعداً أولاً قبل تشغيل المايك.");return;}
- 
- try{
-  if(!room){
-   const token=await createLiveKitToken(ROOM_ID,guestId,name);
-   room=new LivekitClient.Room({adaptiveStream:true,dynacast:true});
-   
-   room.on(LivekitClient.RoomEvent.TrackSubscribed,(track,publication,participant)=>{
-       if(track.kind==="audio"){
-           const audio=track.attach();
-           audio.autoplay=true;
-           audio.setAttribute('playsinline', 'true'); // ضروري لدعم الآيفون
-           document.body.appendChild(audio);
-       }
-   });
-   
-   await room.connect(LIVEKIT_URL,token);
+function renderSeats() {
+  const host = $("seats"); host.innerHTML = "";
+  for (let i = 1; i <= 10; i++) {
+    const occupant = remoteSeats[i]; const mine = mySeat === i;
+    const btn = document.createElement("button"); btn.className = "seat" + (occupant ? " occupied" : "") + (mine ? " mine" : "");
+    btn.innerHTML = '<span class="seat-circle"><span class="mic">' + (occupant ? (occupant.muted ? "🔇" : "🎙️") : "🎙️") + '</span>' + (occupant ? '<span class="lock">●</span>' : '') + '</span><span class="seat-num">' + i + '</span><span class="seat-name">' + (occupant ? safeText(occupant.name) : "متاح") + '</span>';
+    btn.addEventListener("click", () => selectSeat(i)); host.append(btn);
   }
-  
-  myMic=!myMic;
-  await room.localParticipant.setMicrophoneEnabled(myMic);
-  $("micBtn").textContent=myMic?"🔇 كتم المايك":"🎙️ تشغيل المايك";
-  
-  if(firebaseReady&&seatRef)await seatRef.child(String(mySeat)).update({muted:!myMic});
-  if(remoteSeats[mySeat])remoteSeats[mySeat].muted=!myMic;
-  renderSeats();
-  
- }catch(e){
-  console.error(e);
-  myMic=false;
-  if(room){ room.disconnect(); room=null; }
-  systemMessage("فشل تشغيل الصوت: "+(e.message||"تحقق من الاتصال بالإنترنت وصلاحيات المايك."));
- }
+  $("leaveSeat").disabled = mySeat === null;
+  $("onlineCount").textContent = String(Math.max(1, Object.keys(remoteSeats).filter(k => remoteSeats[k]).length + 1));
 }
-$("micBtn").addEventListener("click",toggleMic);
-$("leaveSeat").addEventListener("click",leaveSeat);
-$("raiseHand").addEventListener("click",()=>{systemMessage(name+" رفع يده ✋");if(firebaseReady&&db)db.ref("waslRooms/"+ROOM_ID+"/handRaises").push({uid:guestId,name,time:Date.now()});});
-$("giftBtn").addEventListener("click",()=>systemMessage("🎁 أرسل "+name+" هدية — ميزة تجريبية."));
-function openSettings(){ $("nameField").value=name;$("dbField").value=dbUrl;$("modalBg").classList.add("show");}
-$("settingsBtn").onclick=openSettings;
-$("editProfile").onclick=openSettings;
-$("cancelModal").onclick=()=>$("modalBg").classList.remove("show");
-$("saveSettings").onclick=async()=>{const newName=$("nameField").value.trim()||"ضيف";name=newName;dbUrl=$("dbField").value.trim();localStorage.setItem("wasl_name",name);localStorage.setItem("wasl_db_url",dbUrl);profile();$("modalBg").classList.remove("show");if(firebaseReady&&mySeat!==null&&seatRef)await seatRef.child(String(mySeat)).update({name});if(dbUrl&&!firebaseReady)initFirebase();else if(!dbUrl){$("connectionState").textContent="وضع التجربة";$("chatMode").textContent="رسائل هذه التجربة";}};
-$("modalBg").addEventListener("click",e=>{if(e.target===$("modalBg"))$("modalBg").classList.remove("show");});
-window.addEventListener("beforeunload",()=>{if(mySeat!==null&&firebaseReady&&seatRef)seatRef.child(String(mySeat)).transaction(cur=>cur&&cur.uid===guestId?null:cur);if(room)room.disconnect();});
 
-profile();renderSeats();initFirebase();
+async function initFirebase() {
+  if (!dbUrl) { $("connectionState").textContent = "وضع التجربة"; return; }
+  try {
+    if (!firebase.apps.length) firebase.initializeApp({ ...firebaseConfig, databaseURL: dbUrl });
+    db = firebase.database(); firebaseReady = true;
+    const roomRoot = db.ref("waslRooms/" + ROOM_ID);
+    chatRef = roomRoot.child("messages"); seatRef = roomRoot.child("seats");
+    chatRef.limitToLast(60).on("child_added", s => { const m = s.val(); if (m && m.uid !== guestId) addMessage(m.name || "ضيف", m.text || "", false, m.time || Date.now()); });
+    seatRef.on("value", s => { remoteSeats = s.val() || {}; renderSeats(); });
+    $("connectionState").textContent = "متصل بفايربيس"; $("chatMode").textContent = "دردشة مشتركة";
+    systemMessage("تم الاتصال بقاعدة البيانات");
+  } catch (e) { console.error(e); $("connectionState").textContent = "تعذر الاتصال"; systemMessage("تعذر الاتصال بفايربيس. تحقق من الرابط وقواعد قاعدة البيانات."); }
+}
+
+async function sendMessage(text) {
+  if (!text.trim()) return;
+  if (firebaseReady && chatRef) { try { await chatRef.push({ uid: guestId, name, text: text.trim(), time: Date.now() }); addMessage(name, text.trim(), true); return; } catch (e) { systemMessage("تعذر إرسال الرسالة إلى السيرفر."); } }
+  addMessage(name, text.trim(), true);
+}
+
+$("chatForm").addEventListener("submit", e => { e.preventDefault(); const v = $("messageInput").value; $("messageInput").value = ""; sendMessage(v); });
+
+async function selectSeat(n) {
+  if (mySeat === n) { await leaveSeat(); return; }
+  if (remoteSeats[n]) { systemMessage("هذا المقعد مشغول حالياً."); return; }
+  if (mySeat !== null) await leaveSeat();
+  mySeat = n; remoteSeats[n] = { uid: guestId, name, muted: true };
+  if (firebaseReady && seatRef) { try { const r = seatRef.child(String(n)); await r.transaction(cur => cur === null ? { uid: guestId, name, muted: true } : undefined); const snap = await seatRef.child(String(n)).get(); if (!snap.exists() || snap.val().uid !== guestId) { mySeat = null; systemMessage("سبقك شخص آخر إلى هذا المقعد."); } } catch (e) { systemMessage("تعذر حجز المقعد."); mySeat = null; } }
+  renderSeats(); $("micBtn").textContent = "🎙️ تشغيل المايك";
+  systemMessage("جلست على المقعد " + n + ". اضغط تشغيل المايك للاتصال الصوتي.");
+}
+
+async function leaveSeat() {
+  if (mySeat === null) return;
+  const old = mySeat; mySeat = null; myMic = false;
+  if (room) { try { await room.localParticipant.setMicrophoneEnabled(false); } catch (e) { } }
+  if (firebaseReady && seatRef) { try { await seatRef.child(String(old)).transaction(cur => cur && cur.uid === guestId ? null : cur); } catch (e) { } }
+  delete remoteSeats[old]; $("micBtn").textContent = "🎙️ دخول الصوت"; renderSeats();
+}
+
+function b64url(bytes) {
+  const bin = Array.from(bytes, b => String.fromCharCode(b)).join("");
+  return btoa(bin).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+}
+
+async function createLiveKitToken(roomName, identity, displayName) {
+  if (!window.isSecureContext || !crypto.subtle) {
+    throw new Error("المتصفح يمنع التشفير. يجب فتح الصفحة عبر HTTPS أو localhost.");
+  }
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "HS256", typ: "JWT" };
+  const payload = {
+    iss: LIVEKIT_API_KEY, sub: identity, nbf: now - 5, iat: now, exp: now + 3600,
+    name: displayName,
+    video: { roomJoin: true, room: roomName, canPublish: true, canSubscribe: true, canPublishData: true }
+  };
+  const enc = new TextEncoder();
+  const unsigned = b64url(enc.encode(JSON.stringify(header))) + "." + b64url(enc.encode(JSON.stringify(payload)));
+  const key = await crypto.subtle.importKey("raw", enc.encode(LIVEKIT_API_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(unsigned));
+  return unsigned + "." + b64url(new Uint8Array(sig));
+}
+
+async function toggleMic() {
+  if (mySeat === null) { systemMessage("اختر مقعداً أولاً قبل تشغيل المايك."); return; }
+
+  try {
+    // 1. طلب إذن الميكروفون من المتصفح أولاً
+    systemMessage("جاري طلب إذن الميكروفون...");
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(track => track.stop()); // إيقاف المسار التجريبي بعد أخذ الإذن
+
+    // 2. الاتصال بـ LiveKit
+    if (!room) {
+      systemMessage("جاري الاتصال بالغرفة الصوتية...");
+      const token = await createLiveKitToken(ROOM_ID, guestId, name);
+      room = new LivekitClient.Room({ adaptiveStream: true, dynacast: true });
+
+      room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
+        if (track.kind === "audio") {
+          const audio = track.attach();
+          audio.autoplay = true;
+          audio.setAttribute('playsinline', 'true');
+          document.body.appendChild(audio);
+        }
+      });
+
+      await room.connect(LIVEKIT_URL, token);
+      systemMessage("تم الاتصال بالغرفة الصوتية بنجاح!");
+    }
+
+    // 3. تشغيل/إيقاف المايك
+    myMic = !myMic;
+    await room.localParticipant.setMicrophoneEnabled(myMic);
+    $("micBtn").textContent = myMic ? "🔇 كتم المايك" : "🎙️ تشغيل المايك";
+
+    if (firebaseReady && seatRef) await seatRef.child(String(mySeat)).update({ muted: !myMic });
+    if (remoteSeats[mySeat]) remoteSeats[mySeat].muted = !myMic;
+    renderSeats();
+
+  } catch (e) {
+    console.error(e);
+    myMic = false;
+    if (room) { room.disconnect(); room = null; }
+    let errMsg = e.message || "خطأ غير معروف";
+    if (e.name === "NotAllowedError" || e.name === "PermissionDeniedError") {
+      errMsg = "لقد رفضت إذن الميكروفون. يرجى السماح به من إعدادات المتصفح.";
+    } else if (e.name === "NotFoundError") {
+      errMsg = "لم يتم العثور على ميكروفون متصل بجهازك.";
+    }
+    systemMessage("فشل تشغيل الصوت: " + errMsg);
+  }
+}
+
+$("micBtn").addEventListener("click", toggleMic);
+$("leaveSeat").addEventListener("click", leaveSeat);
+$("raiseHand").addEventListener("click", () => { systemMessage(name + " رفع يده ✋"); if (firebaseReady && db) db.ref("waslRooms/" + ROOM_ID + "/handRaises").push({ uid: guestId, name, time: Date.now() }); });
+$("giftBtn").addEventListener("click", () => systemMessage("🎁 أرسل " + name + " هدية — ميزة تجريبية."));
+
+function openSettings() { $("nameField").value = name; $("dbField").value = dbUrl; $("modalBg").classList.add("show"); }
+$("settingsBtn").onclick = openSettings;
+$("editProfile").onclick = openSettings;
+$("cancelModal").onclick = () => $("modalBg").classList.remove("show");
+$("saveSettings").onclick = async () => { const newName = $("nameField").value.trim() || "ضيف"; name = newName; dbUrl = $("dbField").value.trim(); localStorage.setItem("wasl_name", name); localStorage.setItem("wasl_db_url", dbUrl); profile(); $("modalBg").classList.remove("show"); if (firebaseReady && mySeat !== null && seatRef) await seatRef.child(String(mySeat)).update({ name }); if (dbUrl && !firebaseReady) initFirebase(); else if (!dbUrl) { $("connectionState").textContent = "وضع التجربة"; $("chatMode").textContent = "رسائل هذه التجربة"; } };
+$("modalBg").addEventListener("click", e => { if (e.target === $("modalBg")) $("modalBg").classList.remove("show"); });
+window.addEventListener("beforeunload", () => { if (mySeat !== null && firebaseReady && seatRef) seatRef.child(String(mySeat)).transaction(cur => cur && cur.uid === guestId ? null : cur); if (room) room.disconnect(); });
+
+profile(); renderSeats(); initFirebase();
 </script>
 </body>
 </html>
